@@ -3,9 +3,17 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.102
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServerRunner", "ServerRunner\ServerRunner.csproj", "{D10C216F-099E-48F9-8E17-3F3820244E72}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServerBuilder", "ServerRunner\ServerBuilder.csproj", "{D10C216F-099E-48F9-8E17-3F3820244E72}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "Server\Server.csproj", "{ACC6B8AE-1516-4444-A137-4644C3F63968}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Server", "Server\Server.csproj", "{ACC6B8AE-1516-4444-A137-4644C3F63968}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Client", "Client\Client.csproj", "{09A39530-20F8-4FFA-83ED-BD2F775AF838}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cryptography", "Cryptography\Cryptography.csproj", "{2A231023-AA5D-46AE-AB3A-22FD8E86C652}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClientMessanger", "ClientMessanger\ClientMessanger.csproj", "{3BC0AC7E-3B3B-4D3F-9CC0-B2BDECC460A6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp4", "ConsoleApp4\ConsoleApp4.csproj", "{B3467023-9941-4024-88A3-7805B2BF9FA1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +29,24 @@ Global
 		{ACC6B8AE-1516-4444-A137-4644C3F63968}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ACC6B8AE-1516-4444-A137-4644C3F63968}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ACC6B8AE-1516-4444-A137-4644C3F63968}.Release|Any CPU.Build.0 = Release|Any CPU
+		{09A39530-20F8-4FFA-83ED-BD2F775AF838}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{09A39530-20F8-4FFA-83ED-BD2F775AF838}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{09A39530-20F8-4FFA-83ED-BD2F775AF838}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{09A39530-20F8-4FFA-83ED-BD2F775AF838}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2A231023-AA5D-46AE-AB3A-22FD8E86C652}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A231023-AA5D-46AE-AB3A-22FD8E86C652}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A231023-AA5D-46AE-AB3A-22FD8E86C652}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A231023-AA5D-46AE-AB3A-22FD8E86C652}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3BC0AC7E-3B3B-4D3F-9CC0-B2BDECC460A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3BC0AC7E-3B3B-4D3F-9CC0-B2BDECC460A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3BC0AC7E-3B3B-4D3F-9CC0-B2BDECC460A6}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{3BC0AC7E-3B3B-4D3F-9CC0-B2BDECC460A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3BC0AC7E-3B3B-4D3F-9CC0-B2BDECC460A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3BC0AC7E-3B3B-4D3F-9CC0-B2BDECC460A6}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{B3467023-9941-4024-88A3-7805B2BF9FA1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B3467023-9941-4024-88A3-7805B2BF9FA1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B3467023-9941-4024-88A3-7805B2BF9FA1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B3467023-9941-4024-88A3-7805B2BF9FA1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

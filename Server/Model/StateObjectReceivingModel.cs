@@ -4,7 +4,7 @@ using Server.Settings;
 
 namespace Server.Model
 {
-    public class StateObject
+    public class StateObjectReceivingModel
     {
         public Socket WorkSocket = null;
         public const int BufferSize = ServerSettings.BufferSize;

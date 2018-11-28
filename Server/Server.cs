@@ -9,7 +9,7 @@ namespace Server
     public sealed class Server : IServer 
     {
         public static Server Instance { get; } = new Server();
-
+        public IAsyncSocketListener AsyncSocketListener { private get; set; }
 
         static Server()
         {
@@ -17,7 +17,10 @@ namespace Server
 
         public Task Run()
         {
-            throw new NotImplementedException();
+            return Task.Run(() =>
+                AsyncSocketListener.StartListening()
+            );
         }
     }
 }
+

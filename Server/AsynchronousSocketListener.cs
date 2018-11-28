@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -11,37 +12,44 @@ using Server.Settings;
 
 namespace Server
 {
-    public class AsynchronousSocketListener: IAsyncSocketListener
+    public class AsynchronousSocketListener : IAsyncSocketListener
     {
-        public static ManualResetEvent allDone = new ManualResetEvent(false);
-        private Socket _listener;
+        public static ManualResetEvent AllDone = new ManualResetEvent(false);
+        private static TcpListener _listener;
         private static ILogger<AsynchronousSocketListener> _logger;
+        private static readonly Dictionary<int, TcpClient> Connections = new Dictionary<int, TcpClient>();
+        private static int _connectionCount;
+        private static readonly object Lock = new object();
 
         public AsynchronousSocketListener(ILogger<AsynchronousSocketListener> logger)
         {
             _logger = logger;
         }
 
-        public Task StartListening()
+        public static async Task StartListening()
         {
-            _listener = new Socket(ServerSettings.AddressFamily,
-                ServerSettings.SocketType, ServerSettings.ProtocolType);
-
+            _listener = new TcpListener(ServerSettings.IpEndPoint);
             try
             {
-                _listener.Bind(ServerSettings.IpEndPoint);
-                _logger.LogInformation($"{nameof(AsynchronousSocketListener)} has bind");
-                _listener.Listen(ServerSettings.MaxConnectionsNumber);
-
-                while (true)
+                await Task.Run(async () =>
                 {
-                    allDone.Reset();
+                    _listener.Start();
+                    Console.WriteLine($"Server started on {_listener.Server.LocalEndPoint}");
+                    _logger.LogInformation($"{nameof(AsynchronousSocketListener)} has bound");
 
-                    _logger.LogInformation($"{nameof(AsynchronousSocketListener)} is waiting for connections");
+                    while (true)
+                    {
+                        var client = await _listener.AcceptTcpClientAsync();
+                        lock (Lock) Connections.Add(_connectionCount, client);
 
-                    _listener.BeginAccept(AcceptCallback,
-                        _listener);
-                }
+                        Console.WriteLine($"{client.Client.LocalEndPoint} connected");
+                        _logger.LogInformation($"{client.Client.LocalEndPoint} connected");
+
+                        Task t = new Task(() => handle_clients(_connectionCount));
+                        t.Start();
+                        Interlocked.Increment(ref _connectionCount);
+                    }
+                });
             }
             catch (Exception e)
             {
@@ -50,70 +58,52 @@ namespace Server
             }
         }
 
-        public static void AcceptCallback(IAsyncResult ar)
-        { 
-            allDone.Set();
-            var listener = (Socket)ar.AsyncState;
-            var handler = listener.EndAccept(ar);
-
-            StateObject state = new StateObject();
-            state.WorkSocket = handler;
-            handler.BeginReceive(state.Buffer, 0, StateObject.BufferSize, 0,
-                new AsyncCallback(ReadCallback), state);
-        }
-
-        public static void ReadCallback(IAsyncResult ar)
-        { 
-            var state = (StateObject)ar.AsyncState;
-            var handler = state.WorkSocket;
-
-            var bytesRead = handler.EndReceive(ar);
-
-            if (bytesRead > 0)
-            {
-                state.Sb.Append(Encoding.Default.GetString(
-                    state.Buffer, 0, bytesRead));
-
-                var content = state.Sb.ToString();
-                if (content.IndexOf("<EOF>", StringComparison.Ordinal) > -1)
-                {
-                    _logger.LogInformation("Read {0} bytes from socket. \n Data : {1}",
-                        content.Length, content);
-
-                    Send(handler, content);
-                }
-                else
-                {
-                    handler.BeginReceive(state.Buffer, 0, StateObject.BufferSize, 0,
-                        ReadCallback, state);
-                }
-            }
-        }
-
-        private static void Send(Socket handler, String data)
+        public static void handle_clients(object o)
         {
-            var byteData = Encoding.Default.GetBytes(data);
+            var id = (int)o;
+            TcpClient client;
 
-            handler.BeginSend(byteData, 0, byteData.Length, 0,
-                new AsyncCallback(SendCallback), handler);
+            lock (Lock) client = Connections[id];
+
+            while (true)
+            {
+                NetworkStream stream = client.GetStream();
+                byte[] buffer = new byte[1024];
+                var byteCount = stream.Read(buffer, 0, buffer.Length);
+
+                if (byteCount == 0)
+                {
+                    break;
+                }
+
+                string data = Encoding.ASCII.GetString(buffer, 0, byteCount);
+                broadcast(data);
+                Console.WriteLine(data);
+            }
+
+            lock (Lock) Connections.Remove(id);
+            client.Client.Shutdown(SocketShutdown.Both);
+            client.Close();
         }
 
-        private static void SendCallback(IAsyncResult ar)
+        public static void broadcast(string data)
         {
-            try
-            {
-                var handler = (Socket)ar.AsyncState;
+            byte[] buffer = Encoding.ASCII.GetBytes(data + Environment.NewLine);
 
-                var bytesSent = handler.EndSend(ar);
-                _logger.LogInformation("Sent {0} bytes to client.", bytesSent);
-
-                handler.Shutdown(SocketShutdown.Both);
-                handler.Close();
-            }
-            catch (Exception e)
+            lock (Lock)
             {
-                _logger.LogError(e.ToString());
+                foreach (TcpClient c in Connections.Values)
+                {
+                    NetworkStream stream = c.GetStream();
+
+                    stream.Write(buffer, 0, buffer.Length);
+                }
             }
+        }
+
+        Task IAsyncSocketListener.StartListening()
+        {
+            return StartListening();
         }
     }
 }
