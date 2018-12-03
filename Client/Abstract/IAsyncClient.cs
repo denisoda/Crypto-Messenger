@@ -1,9 +1,11 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 
 namespace Client
 {
-    public interface IAsyncClient
+    public interface IAsyncClient: IDisposable
     {
         Task StartClient();
+        Task Send(string message);
     }
 }

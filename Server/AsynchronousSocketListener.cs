@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,7 +15,6 @@ namespace Server
 {
     public class AsynchronousSocketListener : IAsyncSocketListener
     {
-        public static ManualResetEvent AllDone = new ManualResetEvent(false);
         private static TcpListener _listener;
         private static ILogger<AsynchronousSocketListener> _logger;
         private static readonly Dictionary<int, TcpClient> Connections = new Dictionary<int, TcpClient>();
@@ -58,18 +58,18 @@ namespace Server
             }
         }
 
-        public static void handle_clients(object o)
+        public static void handle_clients(int id)
         {
-            var id = (int)o;
             TcpClient client;
 
-            lock (Lock) client = Connections[id];
+            lock (Lock) client = Connections[id - 1];
 
             while (true)
             {
                 NetworkStream stream = client.GetStream();
-                byte[] buffer = new byte[1024];
-                var byteCount = stream.Read(buffer, 0, buffer.Length);
+                RijndaelManaged rmCrypto = new RijndaelManaged();
+                byte[] buffer = new byte[client.ReceiveBufferSize];
+                var byteCount = stream.Read(buffer, 0, client.ReceiveBufferSize);
 
                 if (byteCount == 0)
                 {
@@ -77,16 +77,17 @@ namespace Server
                 }
 
                 string data = Encoding.ASCII.GetString(buffer, 0, byteCount);
-                broadcast(data);
-                Console.WriteLine(data);
+                Console.WriteLine($"encrypted message: '{data}' from {client.Client.RemoteEndPoint}");
+                Broadcast(data);
             }
 
             lock (Lock) Connections.Remove(id);
             client.Client.Shutdown(SocketShutdown.Both);
             client.Close();
+            Console.WriteLine($"{client.Client.RemoteEndPoint} disconnected");
         }
 
-        public static void broadcast(string data)
+        public static void Broadcast(string data)
         {
             byte[] buffer = Encoding.ASCII.GetBytes(data + Environment.NewLine);
 
