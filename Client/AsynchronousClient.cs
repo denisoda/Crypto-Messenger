@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,6 +17,7 @@ namespace Client
         private static readonly IPAddress ipAddress = ClientSettings.IpAddress;
         private static Task receiveDateTask;
         private static NetworkStream ns;
+        private static RSACryptoServiceProvider rSA = new RSACryptoServiceProvider();
 
         public async Task StartClient()
         {
@@ -37,11 +39,17 @@ namespace Client
         {
             NetworkStream networkStream = client.GetStream();
             byte[] receivedBytes = new byte[1024];
+            var sb = new StringBuilder();
             int byte_count;
 
             while ((byte_count = ns.Read(receivedBytes, 0, receivedBytes.Length)) > 0)
             {
-                Console.Write($"Response from server: {Encoding.ASCII.GetString(receivedBytes, 0, byte_count)}");
+                Console.Write($"Response from server encrypted: {Encoding.ASCII.GetString(receivedBytes, 0, byte_count)}");
+
+                var decryptedBytes = rSA.Decrypt(ClientSettings.PublicKey, false);
+                
+                
+                Console.Write($"Response from server decrypted: {Encoding.ASCII.GetString(receivedBytes, 0, byte_count)}");
             }
         }
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
@@ -15,45 +16,55 @@ namespace Server
 {
     public class AsynchronousSocketListener : IAsyncSocketListener
     {
-        private static TcpListener _listener;
-        private static ILogger<AsynchronousSocketListener> _logger;
+        private static TcpListener listener;
+        private static ILogger<AsynchronousSocketListener> logger;
         private static readonly Dictionary<int, TcpClient> Connections = new Dictionary<int, TcpClient>();
-        private static int _connectionCount;
-        private static readonly object Lock = new object();
+        private static int connectionCount;
+        private static readonly object @lock = new object();
+        private static readonly RSACryptoServiceProvider rSA = new RSACryptoServiceProvider();
+        private static readonly RSAParameters rSAKeyInfo;
+        private static readonly RijndaelManaged RM = new RijndaelManaged();
+
+        static AsynchronousSocketListener()
+        {
+            rSAKeyInfo.Modulus = ServerSettings.PublicKey;
+            rSAKeyInfo.Exponent = ServerSettings.Exponent;
+            rSA.ImportParameters(rSAKeyInfo);
+        }
 
         public AsynchronousSocketListener(ILogger<AsynchronousSocketListener> logger)
         {
-            _logger = logger;
+            AsynchronousSocketListener.logger = logger;
         }
 
         public static async Task StartListening()
         {
-            _listener = new TcpListener(ServerSettings.IpEndPoint);
+            listener = new TcpListener(ServerSettings.IpEndPoint);
             try
             {
                 await Task.Run(async () =>
                 {
-                    _listener.Start();
-                    Console.WriteLine($"Server started on {_listener.Server.LocalEndPoint}");
-                    _logger.LogInformation($"{nameof(AsynchronousSocketListener)} has bound");
+                    listener.Start();
+                    Console.WriteLine($"Server started on {listener.Server.LocalEndPoint}");
+                    logger.LogInformation($"{nameof(AsynchronousSocketListener)} has bound");
 
                     while (true)
                     {
-                        var client = await _listener.AcceptTcpClientAsync();
-                        lock (Lock) Connections.Add(_connectionCount, client);
+                        var client = await listener.AcceptTcpClientAsync();
+                        lock (@lock) Connections.Add(connectionCount, client);
 
                         Console.WriteLine($"{client.Client.LocalEndPoint} connected");
-                        _logger.LogInformation($"{client.Client.LocalEndPoint} connected");
+                        logger.LogInformation($"{client.Client.LocalEndPoint} connected");
 
-                        Task t = new Task(() => handle_clients(_connectionCount));
+                        Task t = new Task(() => handle_clients(connectionCount));
                         t.Start();
-                        Interlocked.Increment(ref _connectionCount);
+                        Interlocked.Increment(ref connectionCount);
                     }
                 });
             }
             catch (Exception e)
             {
-                _logger.LogError(e.ToString());
+                logger.LogError(e.ToString());
                 throw;
             }
         }
@@ -62,12 +73,11 @@ namespace Server
         {
             TcpClient client;
 
-            lock (Lock) client = Connections[id - 1];
+            lock (@lock) client = Connections[id - 1];
 
             while (true)
             {
                 NetworkStream stream = client.GetStream();
-                RijndaelManaged rmCrypto = new RijndaelManaged();
                 byte[] buffer = new byte[client.ReceiveBufferSize];
                 var byteCount = stream.Read(buffer, 0, client.ReceiveBufferSize);
 
@@ -77,11 +87,11 @@ namespace Server
                 }
 
                 string data = Encoding.ASCII.GetString(buffer, 0, byteCount);
-                Console.WriteLine($"encrypted message: '{data}' from {client.Client.RemoteEndPoint}");
+                Console.WriteLine($"plain message: '{data}' from {client.Client.RemoteEndPoint}");
                 Broadcast(data);
             }
 
-            lock (Lock) Connections.Remove(id);
+            lock (@lock) Connections.Remove(id);
             client.Client.Shutdown(SocketShutdown.Both);
             client.Close();
             Console.WriteLine($"{client.Client.RemoteEndPoint} disconnected");
@@ -91,13 +101,18 @@ namespace Server
         {
             byte[] buffer = Encoding.ASCII.GetBytes(data + Environment.NewLine);
 
-            lock (Lock)
+            lock (@lock)
             {
                 foreach (TcpClient c in Connections.Values)
                 {
                     NetworkStream stream = c.GetStream();
 
+                    buffer = rSA.Encrypt(RM.Key, false);
+
                     stream.Write(buffer, 0, buffer.Length);
+
+                    Console.WriteLine($"Message was sent to {c.Client.RemoteEndPoint} via broadcasting");
+                    logger.LogInformation($"Message was sent to {c.Client.RemoteEndPoint} via broadcasting");
                 }
             }
         }
