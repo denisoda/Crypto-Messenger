@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.28307.102
+VisualStudioVersion = 15.0.27130.2024
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServerBuilder", "ServerRunner\ServerBuilder.csproj", "{D10C216F-099E-48F9-8E17-3F3820244E72}"
 EndProject
@@ -21,7 +21,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ServerSide", "ServerSide", 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Crypto", "Crypto", "{9B1DE2F2-C50A-4FE3-A429-D149F05988B6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClientRunner", "ClientRunner\ClientRunner.csproj", "{9431659F-E075-4CA6-A4FA-12401EB47A42}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ClientRunner", "ClientRunner\ClientRunner.csproj", "{9431659F-E075-4CA6-A4FA-12401EB47A42}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Windows", "Windows", "{A2513AAB-6B2D-4481-8FA6-35D07C9274F3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DesktopClient", "DesktopClient\DesktopClient.csproj", "{190163C7-C159-4EA5-8100-5238724ED985}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -55,6 +59,10 @@ Global
 		{9431659F-E075-4CA6-A4FA-12401EB47A42}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9431659F-E075-4CA6-A4FA-12401EB47A42}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9431659F-E075-4CA6-A4FA-12401EB47A42}.Release|Any CPU.Build.0 = Release|Any CPU
+		{190163C7-C159-4EA5-8100-5238724ED985}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{190163C7-C159-4EA5-8100-5238724ED985}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{190163C7-C159-4EA5-8100-5238724ED985}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{190163C7-C159-4EA5-8100-5238724ED985}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -66,6 +74,7 @@ Global
 		{2A231023-AA5D-46AE-AB3A-22FD8E86C652} = {9B1DE2F2-C50A-4FE3-A429-D149F05988B6}
 		{3BC0AC7E-3B3B-4D3F-9CC0-B2BDECC460A6} = {4CDE8251-08A9-4B2A-8074-127216B33076}
 		{9431659F-E075-4CA6-A4FA-12401EB47A42} = {6DB4B93D-4F44-4BD4-9FE4-01F4F2A559AE}
+		{190163C7-C159-4EA5-8100-5238724ED985} = {A2513AAB-6B2D-4481-8FA6-35D07C9274F3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C5EEB4AE-418F-46E4-89DA-69AD86A64AED}
