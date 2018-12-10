@@ -5,6 +5,8 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using RSATest;
+using Server.Abstract;
 using Server.Settings;
 
 namespace Client
@@ -17,7 +19,12 @@ namespace Client
         private static readonly IPAddress ipAddress = ClientSettings.IpAddress;
         private static Task receiveDateTask;
         private static NetworkStream ns;
-        private static RSACryptoServiceProvider rSA = new RSACryptoServiceProvider();
+        private readonly IRSAHelper rsaHelper;
+
+        public AsynchronousClient(IRSAHelper _rsaHelper)
+        {
+            rsaHelper = _rsaHelper;
+        }
 
         public async Task StartClient()
         {
@@ -31,11 +38,11 @@ namespace Client
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.ToString());
+                throw e;
             }
         }
 
-        private static void ReceiveData(TcpClient client)
+        private async void ReceiveData(TcpClient client)
         {
             NetworkStream networkStream = client.GetStream();
             byte[] receivedBytes = new byte[1024];
@@ -44,12 +51,13 @@ namespace Client
 
             while ((byte_count = ns.Read(receivedBytes, 0, receivedBytes.Length)) > 0)
             {
-                Console.Write($"Response from server encrypted: {Encoding.ASCII.GetString(receivedBytes, 0, byte_count)}");
+                var message = Encoding.ASCII.GetString(receivedBytes, 0, byte_count);
 
-                var decryptedBytes = rSA.Decrypt(ClientSettings.PublicKey, false);
-                
-                
-                Console.Write($"Response from server decrypted: {Encoding.ASCII.GetString(receivedBytes, 0, byte_count)}");
+                Console.Write($"Response from server encrypted: {message}");
+
+                message = await rsaHelper.DecryptAsync(message);
+
+                Console.Write($"Response from server decrypted: {message} \n");
             }
         }
 
@@ -59,7 +67,8 @@ namespace Client
             {
                 throw new Exception("Empty string");
             }
-            var s = message;
+            var s = await rsaHelper.EncryptAsync(message);
+
             var buffer = Encoding.ASCII.GetBytes(s);
             await ns.WriteAsync(buffer, 0, buffer.Length);
         }
