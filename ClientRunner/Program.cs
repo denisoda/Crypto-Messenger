@@ -26,9 +26,9 @@ namespace ClientRunner
 
             var client = serviceProvider.GetService<IAsyncClient>();
 
-            using (client)
+            try
             {
-                try
+                using (client)
                 {
                     await client.StartClient();
                     while (true)
@@ -36,17 +36,17 @@ namespace ClientRunner
                         var message = Console.ReadLine();
                         await client.Send(message);
                     }
-                }
-                catch(SocketException)
-                {    
-                    Console.WriteLine("Could not connected to the server, please, try again");
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                    throw;
-                }
 
+                }
+            }
+            catch (SocketException)
+            {
+                Console.WriteLine("Could not connected to the server, please, try again");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
             }
 
             Console.WriteLine("Disconnected from the server");

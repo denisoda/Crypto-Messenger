@@ -8,4 +8,8 @@
     <LangVersion>7.1</LangVersion>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Cryptography\Cryptography.csproj" />
+  </ItemGroup>
+
 </Project>
