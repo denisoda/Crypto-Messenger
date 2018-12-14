@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Server;
 using Server.Abstract;
+using Server.Infrastructure;
 
 namespace ServerBuilder
 {
@@ -15,6 +16,7 @@ namespace ServerBuilder
                 .AddLogging()                
                 .AddSingleton<IServer, Server.Server>()
                 .AddTransient<IAsyncSocketListener, AsynchronousSocketListener>()
+                .AddTransient<IKeyExchangeChecker, KeyExchangeChecker>()
                 .BuildServiceProvider();
 
             var server = serviceProvider.GetService<IServer>();

@@ -10,7 +10,7 @@ namespace Server
     {
         public static Server Instance { get; } = new Server();
         public IAsyncSocketListener AsyncSocketListener { private get; set; }
-
+        
         static Server()
         {
         }

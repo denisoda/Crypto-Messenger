@@ -19,12 +19,10 @@ namespace Client
         private static readonly IPAddress ipAddress = ClientSettings.IpAddress;
         private static Task receiveDateTask;
         private static NetworkStream ns;
-        private readonly IRSAHelper rsaHelper;
-
-        public AsynchronousClient(IRSAHelper _rsaHelper)
-        {
-            rsaHelper = _rsaHelper;
-        }
+        private static readonly RSACryptoServiceProvider rsa;
+        private static byte[] clientPublicKey;
+        private static byte[] clientPrivateKey;
+        private static byte[] serverPrivateKey;
 
         public async Task StartClient()
         {
@@ -70,6 +68,14 @@ namespace Client
             var s = await rsaHelper.EncryptAsync(message);
 
             var buffer = Encoding.ASCII.GetBytes(s);
+            await ns.WriteAsync(buffer, 0, buffer.Length);
+        }
+        
+        
+        public async Task KeyExchange()
+        {
+            ns = client.GetSекуфь()ж
+            var buffer = clientPublicKey;
             await ns.WriteAsync(buffer, 0, buffer.Length);
         }
 

@@ -9,6 +9,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Server.Abstract;
+using Server.Exceptions;
+using Server.Infrastructure;
 using Server.Model;
 using Server.Settings;
 
@@ -18,26 +20,27 @@ namespace Server
     {
         private static TcpListener listener;
         private static ILogger<AsynchronousSocketListener> logger;
+        private IKeyExchangeChecker keyExchangeChecker;
         private static readonly Dictionary<int, TcpClient> Connections = new Dictionary<int, TcpClient>();
         private static int connectionCount;
         private static readonly object @lock = new object();
-        private static readonly RSACryptoServiceProvider rSA = new RSACryptoServiceProvider();
-        private static readonly RSAParameters rSAKeyInfo;
-        private static readonly RijndaelManaged RM = new RijndaelManaged();
+        private static readonly RSACryptoServiceProvider rsa;
+        private static RSAParameters serverPrivateKey;
+        private RSAParameters clientPublicKey;
 
         static AsynchronousSocketListener()
         {
-            rSAKeyInfo.Modulus = ServerSettings.PublicKey;
-            rSAKeyInfo.Exponent = ServerSettings.Exponent;
-            rSA.ImportParameters(rSAKeyInfo);
+            rsa = new RSACryptoServiceProvider();
+            serverPrivateKey = rsa.ExportParameters(true);
         }
 
-        public AsynchronousSocketListener(ILogger<AsynchronousSocketListener> logger)
+        public AsynchronousSocketListener(ILogger<AsynchronousSocketListener> logger, IKeyExchangeChecker _keyExchangeChecker)
         {
             AsynchronousSocketListener.logger = logger;
+            keyExchangeChecker = _keyExchangeChecker;
         }
 
-        public static async Task StartListening()
+        public async Task StartListening()
         {
             listener = new TcpListener(ServerSettings.IpEndPoint);
             try
@@ -69,26 +72,42 @@ namespace Server
             }
         }
 
-        public static void handle_clients(int id)
+        private void handle_clients(int id)
         {
             TcpClient client;
-
             lock (@lock) client = Connections[id - 1];
-
+            
+            NetworkStream stream = client.GetStream(); 
+            
+            byte[] buffer = new byte[client.ReceiveBufferSize];
+            if (stream.Read(buffer, 0, client.ReceiveBufferSize) == 0)
+            {
+                logger.LogError($"key exchange with {client.Client.LocalEndPoint} failed");
+                throw new ServerException("Key exchange failed.");
+            };
+            clientPublicKey.Modulus = buffer;
+            
+            rsa.ImportParameters(clientPublicKey);
+            
+            buffer = rsa.Encrypt(serverPrivateKey.Modulus, false);
+            
+            stream.Write(buffer, 0, buffer.Length);
+            
+            logger.LogInformation($"key exchange with {client.Client.LocalEndPoint} succeed");
+            
             while (true)
             {
-                NetworkStream stream = client.GetStream();
-                byte[] buffer = new byte[client.ReceiveBufferSize];
+                stream = client.GetStream();
+                buffer = new byte[client.ReceiveBufferSize];
                 var byteCount = stream.Read(buffer, 0, client.ReceiveBufferSize);
-
                 if (byteCount == 0)
                 {
                     break;
                 }
-
+                buffer = rsa.Decrypt(buffer, false);              
                 string data = Encoding.ASCII.GetString(buffer, 0, byteCount);
-                Console.WriteLine($"plain message: '{data}' from {client.Client.RemoteEndPoint}");
-                Broadcast(data);
+                Console.WriteLine($"message: '{data}' from {client.Client.RemoteEndPoint}");
+                Send(client, buffer);
             }
 
             lock (@lock) Connections.Remove(id);
@@ -97,6 +116,15 @@ namespace Server
             Console.WriteLine($"{client.Client.RemoteEndPoint} disconnected");
         }
 
+        public async void Send(TcpClient client, byte[] data)
+        {
+            var buffer = Encoding.ASCII.GetBytes(data + Environment.NewLine);
+            buffer = rsa.Encrypt(buffer, false);
+            var stream = client.GetStream();
+
+            await stream.WriteAsync(buffer, 0, buffer.Length);
+        }
+        
         public static void Broadcast(string data)
         {
             byte[] buffer = Encoding.ASCII.GetBytes(data + Environment.NewLine);
@@ -106,8 +134,6 @@ namespace Server
                 foreach (TcpClient c in Connections.Values)
                 {
                     NetworkStream stream = c.GetStream();
-
-                    buffer = rSA.Encrypt(RM.Key, false);
 
                     stream.Write(buffer, 0, buffer.Length);
 
